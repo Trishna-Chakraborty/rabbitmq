@@ -13,30 +13,35 @@ import java.util.concurrent.TimeoutException;
 
 public class RPCClient implements AutoCloseable {
 
-    private Connection connection;
-    private Channel channel;
+    public Connection connection;
+    public Channel channel;
     private static String requestQueueName1 = "rpc_queue1";
     private static String requestQueueName2 = "rpc_queue2";
+
 
 
     public RPCClient() throws IOException, TimeoutException {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost("localhost");
-
         connection = factory.newConnection();
         channel = connection.createChannel();
+
     }
 
     public static void main(String[] argv) {
         try (RPCClient fibonacciRpc = new RPCClient()) {
+            String replyQueueName="REPLY_QUEUE";
+            fibonacciRpc.channel.queueDeclare(replyQueueName, false, false, false, null);
+            //fibonacciRpc.channel.queueDeclare().getQueue();;
+
             for (int i = 0; i < 5; i++) {
                 String i_str = Integer.toString(i);
                 System.out.println(" [x] Requesting fib(" + i_str + ")" + " to server 1");
-                String response1 = fibonacciRpc.call(i_str,requestQueueName1);
+                String response1 = fibonacciRpc.call(i_str,requestQueueName1,replyQueueName);
                 System.out.println(" [.] Got '" + response1 + "'" +" from server 1 ");
 
                 System.out.println(" [x] Requesting fib(" + response1 + ")" + " to server 2");
-                String response2 = fibonacciRpc.call(response1,requestQueueName2);
+                String response2 = fibonacciRpc.call(response1,requestQueueName2,replyQueueName);
                 System.out.println(" [.] Got '" + response2 + "'" +" from server 2 ");
 
             }
@@ -45,10 +50,11 @@ public class RPCClient implements AutoCloseable {
         }
     }
 
-    public String call(String message, String requestQueueName) throws IOException, InterruptedException {
+    public String call(String message, String requestQueueName,String replyQueueName) throws IOException, InterruptedException {
         final String corrId = UUID.randomUUID().toString();
 
-        String replyQueueName = channel.queueDeclare().getQueue();
+        //replyQueueName =channel.queueDeclare().getQueue();
+        //System.out.println("Reply Queue name " + replyQueueName + corrId);
         AMQP.BasicProperties props = new AMQP.BasicProperties
                 .Builder()
                 .correlationId(corrId)
@@ -72,6 +78,7 @@ public class RPCClient implements AutoCloseable {
     }
 
     public void close() throws IOException {
+        System.out.println("connection is closed");
         connection.close();
     }
 }
