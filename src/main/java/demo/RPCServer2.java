@@ -19,7 +19,7 @@ public class RPCServer2 {
         try (Connection connection = factory.newConnection();
              Channel channel = connection.createChannel()) {
             channel.queueDeclare(RPC_QUEUE_NAME, false, false, false, null);
-            channel.queuePurge(RPC_QUEUE_NAME);
+            //channel.queuePurge(RPC_QUEUE_NAME);
 
             channel.basicQos(1);
 
@@ -35,6 +35,7 @@ public class RPCServer2 {
                 String response = "";
 
                 try {
+                    System.out.println("here");
                     String message = new String(delivery.getBody(), "UTF-8");
                     int n = Integer.parseInt(message);
 

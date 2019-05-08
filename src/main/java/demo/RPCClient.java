@@ -1,9 +1,6 @@
 package demo;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.*;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -34,7 +31,7 @@ public class RPCClient implements AutoCloseable {
             fibonacciRpc.channel.queueDeclare(replyQueueName, false, false, false, null);
             //fibonacciRpc.channel.queueDeclare().getQueue();;
 
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < 20; i++) {
                 String i_str = Integer.toString(i);
                 System.out.println(" [x] Requesting fib(" + i_str + ")" + " to server 1");
                 String response1 = fibonacciRpc.call(i_str,requestQueueName1,replyQueueName);
@@ -59,9 +56,10 @@ public class RPCClient implements AutoCloseable {
                 .Builder()
                 .correlationId(corrId)
                 .replyTo(replyQueueName)
+                .deliveryMode(2)
                 .build();
 
-        channel.basicPublish("", requestQueueName, props, message.getBytes("UTF-8"));
+        channel.basicPublish("", requestQueueName, props,message.getBytes("UTF-8"));
 
         final BlockingQueue<String> response = new ArrayBlockingQueue<>(1);
 
