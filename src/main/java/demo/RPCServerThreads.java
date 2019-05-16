@@ -1,13 +1,11 @@
 package demo;
 
+
 import com.rabbitmq.client.*;
 
-import java.util.HashMap;
-import java.util.Map;
+public class RPCServerThreads {
 
-public class RPCServer1 {
-
-    private static final String RPC_QUEUE_NAME = "one";
+    private static final String RPC_QUEUE_NAME = "rpc_queue2";
 
     private static int fib(int n) {
         if (n == 0) return 0;
@@ -21,8 +19,8 @@ public class RPCServer1 {
 
         try (Connection connection = factory.newConnection();
              Channel channel = connection.createChannel()) {
-
             channel.queueDeclare(RPC_QUEUE_NAME, false, false, false, null);
+            channel.queueDeclare("rpc_queue1", false, false, false, null);
             //channel.queuePurge(RPC_QUEUE_NAME);
 
             channel.basicQos(1);
@@ -39,6 +37,7 @@ public class RPCServer1 {
                 String response = "";
 
                 try {
+                    System.out.println("here");
                     String message = new String(delivery.getBody(), "UTF-8");
                     int n = Integer.parseInt(message);
 
@@ -57,6 +56,7 @@ public class RPCServer1 {
             };
 
             channel.basicConsume(RPC_QUEUE_NAME, false, deliverCallback, (consumerTag -> { }));
+            channel.basicConsume("rpc_queue1", false, deliverCallback, (consumerTag -> { }));
             // Wait and be prepared to consume the message from RPC client.
             while (true) {
                 synchronized (monitor) {
