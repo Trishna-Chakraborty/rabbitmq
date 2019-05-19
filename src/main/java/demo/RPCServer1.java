@@ -22,8 +22,19 @@ public class RPCServer1 {
         try (Connection connection = factory.newConnection();
              Channel channel = connection.createChannel()) {
 
-            channel.queueDeclare(RPC_QUEUE_NAME, false, false, false, null);
+           // channel.queueDeclare(RPC_QUEUE_NAME, false, false, false, null);
             //channel.queuePurge(RPC_QUEUE_NAME);
+            channel.exchangeDeclare("dead_exchange", "direct");
+            channel.queueDeclare("dead_queue", false, false, false, null);
+            channel.queueBind("dead_queue", "dead_exchange", "");
+
+
+            Map<String, Object> args = new HashMap<String, Object>();
+            args.put("x-dead-letter-exchange", "dead_exchange");
+            args.put("x-message-ttl", 60000);
+            channel.queueDeclare(RPC_QUEUE_NAME, false, false, false, args);
+            channel.exchangeDeclare(RPC_QUEUE_NAME+"_exchange", "direct");;
+            channel.queueBind(RPC_QUEUE_NAME, RPC_QUEUE_NAME+"_exchange", "");
 
             channel.basicQos(1);
 
